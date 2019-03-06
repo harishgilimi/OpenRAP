@@ -25,18 +25,54 @@ restore_files()
 	done
 }
 
-telemetry_script_enable()
+reboot_device()
 {
-    ln -s /lib/systemd/system/telemetry.service /etc/systemd/system/multi-user.target.wants/telemetry.service
-    systemctl restart telemetry
+	echo "Rebooting device"
+	reboot now
 }
 
+install_aria2()
+{
+	echo "Installing aria2"
+	dpkg -i /tmp/aria2_deb/*
+}
+
+remove_aria2_deb()
+{
+	echo "Cleaning aria2 deb files"
+	rm -rf /tmp/aria2_deb
+}
 
 post_install()
 {
 echo "Running post install scripts"
 restore_files
-telemetry_script_enable
+
+# Create a dir for searchdb (if not present)
+mkdir -p /opt/searchEngine/bleveDbDir/
+mkdir -p /home/admin/GoK/
+
+# Install aria2 and clean up the deb files used
+install_aria2
+remove_aria2_deb
+
+systemctl enable searchserver
+systemctl restart searchserver
+
+systemctl enable appserver
+systemctl restart appserver
+
+systemctl enable devmgmt
+systemctl restart devmgmt
+
+systemctl enable syncthing
+systemctl restart syncthing
+
+systemctl enable aria2
+systemctl restart aria2
+
+reboot_device
+
 exit 0
 
 }

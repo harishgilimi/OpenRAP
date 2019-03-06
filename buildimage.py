@@ -17,12 +17,19 @@ build_logfile = "buildimage.log"
 log = logging.getLogger('ORAP')
 
 # GO path setting
+GOARCH='arm'
 gopath = base_dir + 'build/go/'
 apiserver_parent_dir = gopath + "src/github.com/projectOpenRAP/OpenRAP/"
+syncthing_dir = gopath + "src/github.com/syncthing/syncthing/"
 
 # Device management server
-dmserver_dir = base_dir + 'devmgmt'
-
+dmserver_dir = base_dir + 'devmgmtV2'
+dbsdk_dir = base_dir + 'dbsdk'
+dbsdk2_dir = base_dir + 'dbsdk2'
+filesdk_dir = base_dir + 'filesdk'
+searchsdk_dir = base_dir + 'searchsdk'
+appServer_dir = base_dir + 'appServer'
+telemetrysdk_dir = base_dir + 'telemetrysdk'
 #############
 
 def version_get(vf):
@@ -36,15 +43,6 @@ def version_get(vf):
 def file_version_update(vf, version):
     with open(vf, "w") as f:
         f.write(version)
-
-def version_suffix(profile, version):
-    if profile == "meghshala":
-        suffix = "MS"
-    elif profile == "ekstep":
-        suffix = "ES"
-    else:
-        suffix = "DF"
-    return suffix
 
 
 def hostname_get(profile):
@@ -111,18 +109,54 @@ def golang_init():
         except OSError:
             log.info("Error creating gopath directories...")
         # Install go dep
-        cmd = "go get -u github.com/golang/dep/cmd/dep" 
+        cmd = "go get -u github.com/golang/dep/cmd/dep"
         run_cmd(cmd)
 
-        cmd = "cd " + apiserver_parent_dir + " && ln -s ../../../../../../apiserver" 
+        cmd = "cd " + apiserver_parent_dir + " && ln -s ../../../../../../searchServer"
         run_cmd(cmd)
 
         # dep ensure
-        cmd = "cd " + apiserver_parent_dir + "apiserver"  + " && dep ensure"
+        #cmd = "cd " + apiserver_parent_dir + "searchServer"  + " && dep ensure"
+        #run_cmd(cmd)
+
+        cmd = "go get github.com/gorilla/mux"
         run_cmd(cmd)
+        cmd = "go get github.com/blevesearch/bleve"
+        run_cmd(cmd)
+        cmd = "go get github.com/blevesearch/bleve-mapping-ui"
+        run_cmd(cmd)
+        cmd = "go get github.com/blevesearch/snowballstem"
+        run_cmd(cmd)
+        cmd = "go get github.com/couchbase/moss"
+        run_cmd(cmd)
+        cmd = "go get github.com/syndtr/goleveldb/leveldb"
+        run_cmd(cmd)
+        cmd = "go get golang.org/x/text/unicode/norm"
+        run_cmd(cmd)
+
+        cmd = "go get github.com/willf/bitset"
+        run_cmd(cmd)
+
+
+        cmd = "go get github.com/mohae/deepcopy"
+        run_cmd(cmd)
+
 
     return
 
+def syncthing_init():
+
+    # Check if syncthig is already cloned and pull latest if present else clone
+    if os.path.isdir(syncthing_dir):
+        log.info("Pulling from syncthing:master...")
+
+        cmd = "cd " + syncthing_dir + " && git pull"
+        run_cmd(cmd)
+    else:
+        log.info("Cloning syncthing:master...")
+
+        cmd = "git clone -b v1.0.0 https://github.com/syncthing/syncthing " + syncthing_dir
+        run_cmd(cmd)
 
 class Platform(object):
     '''This is a class of PlatformBoard
@@ -199,20 +233,20 @@ class Device(object):
     def logging_init(self):
         self.log = logging.getLogger('ORAP')
         self.log.setLevel(logging.DEBUG)
-    
+
         # create formatter and add it to the handlers
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         build_logfilename = self.build_output_dir + build_logfile
-    
+
         #Needed to log output of subprocess.Popen
         self.logfd = open(build_logfilename, "a")
-    
+
         # create file handler which logs even debug messages
         fh = logging.FileHandler(build_logfilename)
         fh.setLevel(logging.DEBUG)
         fh.setFormatter(formatter)
         self.log.addHandler(fh)
-        
+
         # create console handler with a higher log level
         ch = logging.StreamHandler()
         ch.setLevel(logging.INFO)
@@ -229,6 +263,8 @@ class Device(object):
         '''Ensure all directory structure and files are present'''
 
         golang_init()
+
+        syncthing_init()
 
         # Create a 'opencdn' directory inside build where all the files will be copied
         try:
@@ -257,22 +293,88 @@ class Device(object):
         run_cmd(cmd)
 
     def do_build(self):
-        # Copy rootfs_overlay first
-        cmd = "cp -r " + rootfs_dir + " " + self.imgdir
-        run_cmd(cmd)
 
         # copy CDN dir
         cmd = "cp -r " + cdn_dir + " " + self.imgdir
         run_cmd(cmd)
 
-        # copy devmgmt/file-upload dir
+        #npm install in db sdk
+        cmd = "cd dbsdk && npm install"
+        run_cmd(cmd)
+
+        # copy dbsdk
+        cmd = "cp -r " + dbsdk_dir + " " + self.imgdir
+        run_cmd(cmd)
+
+        #npm install in db sdk
+        cmd = "cd dbsdk2 && npm install"
+        run_cmd(cmd)
+
+        # copy dbsdk
+        cmd = "cp -r " + dbsdk2_dir + " " + self.imgdir
+        run_cmd(cmd)
+
+        #npm install in file sdk
+        cmd = "cd filesdk && npm install"
+        run_cmd(cmd)
+
+        # copy filesdk
+        cmd = "cp -r " + filesdk_dir + " " + self.imgdir
+        run_cmd(cmd)
+
+        #npm install in search sdk
+        cmd = "cd searchsdk && npm install"
+        run_cmd(cmd)
+
+        # copy search sdk
+        cmd = "cp -r " + searchsdk_dir + " " + self.imgdir
+        run_cmd(cmd)
+
+        #npm install in telemetry sdk
+        cmd = "cd telemetrysdk && npm install"
+        run_cmd(cmd)
+
+        # copy telemetry sdk
+        cmd = "cp -r " + telemetrysdk_dir + " " + self.imgdir
+        run_cmd(cmd)
+
+        #npm install in app server
+        cmd = "cd appServer && npm install"
+        run_cmd(cmd)
+
+        # copy app server
+        cmd = "cp -r " + appServer_dir + " " + self.imgdir
+        run_cmd(cmd)
+
+        #npm installl in devicemgmt server
+        cmd = "cd devmgmtV2 && npm install"
+        run_cmd(cmd)
+
+        # copy devmgmt server
         cmd = "cp -r " + dmserver_dir + " " + self.imgdir
         run_cmd(cmd)
 
+        #build frontend for device management
+        cmd = "cd devmgmtui && npm install && npm run build"
+        run_cmd(cmd)
+
+
+
+        # copy devmgmtui build to rootfs overlay
+        cmd = "cp -r devmgmtui/build/* rootfs_overlay/var/www/html/admin/"
+        run_cmd(cmd)
+
+        # Copy rootfs_overlay first
+        cmd = "cp -r " + rootfs_dir + " " + self.imgdir
+        run_cmd(cmd)
 
         # Compile golang apiserver; create the executable in CDN directory
         log.info("go env path " + os.environ['GOPATH'])
-        cmd = "cd " + self.imgdir + "CDN/"  + " && env CGO_ENABLED=0 GOOS=linux GOARCH=arm go build github.com/projectOpenRAP/OpenRAP/apiserver"
+        cmd = "cd " + self.imgdir + "CDN/" + " && env CGO_ENABLED=0 GOOS=linux " + "GOARCH=" + GOARCH + "  go build github.com/projectOpenRAP/OpenRAP/searchServer"
+        run_cmd(cmd)
+
+        # Compiling Syncthing and moving the executable to the CDN directory
+        cmd = "cd " + syncthing_dir + " && env CGO_ENABLED=0 go run build.go -pkgdir " + (gopath + "pkg/linux_arm") + " -goos linux -goarch " + GOARCH + " build && mv ./syncthing " + (self.imgdir + "CDN/")
         run_cmd(cmd)
 
         #TODO: Copy the devicemgmt code
@@ -329,8 +431,6 @@ class Profile(Device):
 
         ver_file = self.imgdir + "CDN/version.txt"
         version = version_get(ver_file)
-        # Modify version to profile specific
-        version = version[:-2] + version_suffix(self.profiletype, version)
         file_version_update(ver_file, version)
         tgz_file = "openrap-" + version + ".tgz"
         cmd = "cd " + self.distdir + " && tar -zcf " + tgz_file + "   ../opencdn"
@@ -360,10 +460,10 @@ def run_cmd(cmd):
 
 ##########################################################
 
-boardlist = ["rpi", "opi"]
-platformlist = ["raspbian", "armbian"]
+boardlist = ["rpi", "opi", "minipc", "tinkerboard"]
+platformlist = ["raspbian", "armbian", "ubuntu", "tinkeros"]
 devicelist = ["openrap"]
-profilelist = ["meghshala", "ekstep"]
+profilelist = ["ekstep"]
 
 
 if __name__ == '__main__':
@@ -377,6 +477,8 @@ if __name__ == '__main__':
     (board, platform, profile, clean) = (args.board, args.platform, args.profile, args.clean)
     device="openrap"
 
+    if board == "minipc":
+        GOARCH='386'
 
     d = Profile(profile, device, platform, board)
     if args.clean:

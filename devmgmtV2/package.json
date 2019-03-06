@@ -1,0 +1,32 @@
+{
+  "name": "devmgmtv2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "connect-multiparty": "^2.1.0",
+    "cors": "^2.8.4",
+    "diskspace": "^2.0.0",
+    "express": "^4.16.2",
+    "image-size": "^0.6.2",
+    "jsonwebtoken": "^8.3.0",
+    "moment": "^2.22.2",
+    "node-cron": "^1.2.1",
+    "os-utils": "0.0.14",
+    "q": "^1.5.1",
+    "random-mac": "0.0.4",
+    "request": "^2.87.0",
+    "uniqid": "^5.0.3",
+    "unzip": "^0.1.11",
+    "uuid": "^3.3.2"
+  },
+  "devDependencies": {
+    "eslint": "^5.6.1"
+  }
+}
